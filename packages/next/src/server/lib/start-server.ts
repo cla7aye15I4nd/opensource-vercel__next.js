@@ -1,3 +1,4 @@
+import type { BrowserFixtureHost } from '../../experimental/testing/contracts'
 // Start CPU profile if it wasn't already started.
 import './cpu-profile'
 import { getNetworkHost } from '../../lib/get-network-host'
@@ -137,6 +138,8 @@ export interface StartServerOptions {
   // this is dev-server only
   selfSignedCertificate?: SelfSignedCertificate
   serverFastRefresh?: boolean
+  /** Internal Next test-runner input; never loaded from user configuration. */
+  browserFixtureHost?: BrowserFixtureHost
 }
 
 export async function getRequestHandlers({
@@ -150,6 +153,7 @@ export async function getRequestHandlers({
   keepAliveTimeout,
   experimentalHttpsServer,
   serverFastRefresh,
+  browserFixtureHost,
   quiet,
 }: {
   dir: string
@@ -162,6 +166,8 @@ export async function getRequestHandlers({
   keepAliveTimeout?: number
   experimentalHttpsServer?: boolean
   serverFastRefresh?: boolean
+  /** Internal Next test-runner input; never loaded from user configuration. */
+  browserFixtureHost?: BrowserFixtureHost
   quiet?: boolean
 }): ReturnType<typeof initialize> {
   return initialize({
@@ -175,6 +181,7 @@ export async function getRequestHandlers({
     keepAliveTimeout,
     experimentalHttpsServer,
     serverFastRefresh,
+    browserFixtureHost,
     startServerSpan,
     quiet,
   })
@@ -182,6 +189,7 @@ export async function getRequestHandlers({
 
 export type StartServerResult = {
   distDir: string
+  basePath?: string
 }
 
 export async function startServer(
@@ -196,7 +204,13 @@ export async function startServer(
     keepAliveTimeout,
     selfSignedCertificate,
     serverFastRefresh,
+    browserFixtureHost,
   } = serverOptions
+  if (browserFixtureHost && !isDev) {
+    throw new Error(
+      'Browser component fixtures require a development application server'
+    )
+  }
   let { port } = serverOptions
 
   process.title = `next-server (v${process.env.__NEXT_VERSION})`
@@ -319,6 +333,7 @@ export async function startServer(
 
   let cleanupListeners = isDev ? new AsyncCallbackSet() : undefined
 
+  let basePath: string | undefined
   const distDir = await new Promise<string>((resolve) => {
     server.on('listening', async () => {
       const addr = server.address()
@@ -501,6 +516,7 @@ export async function startServer(
           keepAliveTimeout,
           experimentalHttpsServer: !!selfSignedCertificate,
           serverFastRefresh,
+          browserFixtureHost,
         })
         devMemoryThresholdRestart = initResult.devMemoryThresholdRestart
         requestHandler = initResult.requestHandler
@@ -557,6 +573,7 @@ export async function startServer(
           })
         }
 
+        basePath = initResult.basePath
         resolve(initResult.distDir)
       } catch (err) {
         // fatal error if we can't setup
@@ -624,7 +641,7 @@ export async function startServer(
     })
   }
 
-  return { distDir }
+  return { distDir, basePath }
 }
 
 if (process.env.NEXT_PRIVATE_WORKER && process.send) {
@@ -685,6 +702,7 @@ if (process.env.NEXT_PRIVATE_WORKER && process.send) {
         nextServerReady: true,
         port: process.env.PORT,
         distDir: result.distDir,
+        basePath: result.basePath,
       })
     }
   })

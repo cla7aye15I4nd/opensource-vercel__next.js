@@ -1,46 +1,20 @@
 # Next.js upgrade evals
 
-This suite extends the existing `@vercel/agent-eval` setup. Fixtures use exact old
-Next.js versions, while the separately packed candidate provides the global
-`next upgrade` command.
+Run upgrade agents locally through Vercel Sandbox and AI Gateway, then verify the delivered app in a separate credential-free Sandbox. Keep local credentials and raw results untracked.
 
-## Run
+## Local setup
 
-Use the existing [eval credential setup](../README.md#one-time-setup): `vc link`
-and `vc env pull` at the repo root. Both runners share environment-file linking
-and package packing. Authentication, sandbox selection, native agents, withheld
-assertions, judging and result storage belong to `@vercel/agent-eval`.
+Use your existing Vercel CLI login and project. From the repository root:
 
 ```sh
+pnpm install --frozen-lockfile
 pnpm build-all
-pnpm eval:upgrade <fixture-name> --dry
-NEXT_UPGRADE_EVAL_EXPERIMENT=codex pnpm eval:upgrade <fixture-name>
+vc link --yes --scope vercel-labs --project next-agentic-upgrade
+vc env pull --environment=development --scope vercel-labs
+chmod 600 .env.local
+pnpm eval:upgrade --list
+pnpm eval:upgrade security-same-major --dry
+NEXT_UPGRADE_EVAL_EXPERIMENT=codex pnpm eval:upgrade security-same-major
 ```
 
-Omit the experiment filter to run Codex and Claude. `--list` lists fixtures without
-packing or making model calls. Run one named fixture at a time. Results use the
-framework's normal `results/` layout. Fixtures are added by the feature PRs stacked
-above this infrastructure.
-
-## Lifecycle
-
-1. Create one temporary Vercel Sandbox snapshot with the agent CLIs.
-2. Upload the fixture and establish its git baseline.
-3. Install candidate Next.js and codemod packages separately, route npm and npx
-   upgrade commands to the candidate CLI, then install app dependencies.
-4. Snapshot the prepared fixture and fork each selected agent from it.
-5. Run each native agent and judge independently. Agent-eval withholds `EVAL.ts`
-   and captures transcripts and results as usual.
-
-Package archives use the same fixed, overwritten paths as existing evals. Invalid
-fixtures fail before execution, and infrastructure failures are retained in the results.
-
-## Adding feature coverage
-
-Feature PRs add ordinary npm app fixtures with exact dependency versions,
-`PROMPT.md`, and `EVAL.ts`. Explicit upgrade scenarios invoke
-`npx next@canary upgrade --agent`. Reminder scenarios keep the original task prompt
-unchanged so the eval can attribute acknowledgment to the runtime notice. Feature
-PRs own browser setup, repository remotes, advisory responses, codemod routing,
-grading, and reference or negative controls. Keep graders and reference solutions
-withheld, and retain sandbox or authentication failures as failures.
+Only VERCEL_OIDC_TOKEN is required. Use claude instead of codex to select the other harness. The case prompt invokes the candidate CLI; committed, dirty and untracked worktree source is captured before grading. Results retain the actual source, command output and passed/failed/invalid verdict. Only invocation-owned VMs and snapshots are cleaned up.

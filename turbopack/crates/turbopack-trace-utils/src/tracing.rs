@@ -5,6 +5,31 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+/// The magic bytes at the start of every trace file. They include the version of the trace
+/// format, which must be bumped on every incompatible change to [`TraceRow`]. The header is
+/// followed by a stream of [`postcard`] serialized [`TraceRow`]s.
+pub const TRACE_HEADER: &[u8] = b"TRACEv1";
+
+/// The part of [`TRACE_HEADER`] that is the same for all versions.
+pub const TRACE_HEADER_PREFIX: &[u8] = b"TRACEv";
+
+/// Checks that `data` starts with the [`TRACE_HEADER`] of the supported trace format version.
+/// `data` must contain at least `TRACE_HEADER.len()` bytes, unless the file is shorter.
+pub fn check_trace_header(data: &[u8]) -> anyhow::Result<()> {
+    if data.starts_with(TRACE_HEADER) {
+        return Ok(());
+    }
+    let expected = String::from_utf8_lossy(TRACE_HEADER);
+    if data.starts_with(TRACE_HEADER_PREFIX) {
+        let found = &data[..data.len().min(TRACE_HEADER.len())];
+        anyhow::bail!(
+            "Unsupported trace file version: expected {expected}, found {}",
+            String::from_utf8_lossy(found)
+        );
+    }
+    anyhow::bail!("Not a trace file: missing {expected} header");
+}
+
 /// A raw trace line.
 ///
 /// # Timestamps
@@ -292,7 +317,9 @@ impl TraceValue<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::tracing::{TimestampDecodeError, TimestampDecoder, TimestampEncoder, TraceRow};
+    use crate::tracing::{
+        TimestampDecodeError, TimestampDecoder, TimestampEncoder, TraceRow, check_trace_header,
+    };
 
     fn end(ts: i64) -> TraceRow<'static> {
         TraceRow::End { ts, id: 1 }
@@ -449,5 +476,24 @@ mod tests {
             decoder.decode(&mut end(1)),
             Err(TimestampDecodeError::Overflow)
         );
+    }
+
+    #[test]
+    fn checks_trace_header() {
+        assert!(check_trace_header(b"TRACEv1").is_ok());
+        assert!(check_trace_header(b"TRACEv1\x00\x01").is_ok());
+        assert_eq!(
+            check_trace_header(b"TRACEv0\x00").unwrap_err().to_string(),
+            "Unsupported trace file version: expected TRACEv1, found TRACEv0"
+        );
+        assert_eq!(
+            check_trace_header(b"TRACEv2").unwrap_err().to_string(),
+            "Unsupported trace file version: expected TRACEv1, found TRACEv2"
+        );
+        assert_eq!(
+            check_trace_header(b"\x00\x01\x02").unwrap_err().to_string(),
+            "Not a trace file: missing TRACEv1 header"
+        );
+        assert!(check_trace_header(b"").is_err());
     }
 }

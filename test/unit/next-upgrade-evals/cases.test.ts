@@ -14,19 +14,21 @@ describe('upgrade eval selection', () => {
         .split('\n')
     ).toEqual([
       'latest-cross-major',
+      'latest-nudge',
       'latest-same-major',
       'security-cross-major',
+      'security-nudge',
       'security-same-major',
     ])
   })
 
-  it('validates an upgrade fixture without starting remote work', () => {
+  it('validates a nudge fixture without starting remote work', () => {
     expect(
-      execFileSync(process.execPath, [runner, 'security-same-major', '--dry'], {
+      execFileSync(process.execPath, [runner, 'security-nudge', '--dry'], {
         env: { PATH: process.env.PATH, NODE_ENV: 'test' },
         encoding: 'utf8',
       }).trim()
-    ).toBe('security-same-major')
+    ).toBe('security-nudge')
   })
 })
 
@@ -65,6 +67,23 @@ describe('candidate upgrade evidence', () => {
         encoding: 'utf8',
       }).trim()
     ).toBe('')
+  })
+})
+
+describe('fixed judge execution boundary', () => {
+  const {
+    completedJudge,
+  } = require('../../../evals/next-upgrade/verifier/judge/EVAL')
+
+  it('accepts a completed semantic failure while rejecting runner and parser failures', () => {
+    const verdict = { pass: false, reason: 'Final response omitted the notice' }
+    expect(completedJudge({ ok: true, agentExitCode: 0 }, verdict)).toEqual(
+      verdict
+    )
+    expect(() =>
+      completedJudge({ ok: false, agentExitCode: 1 }, verdict)
+    ).toThrow()
+    expect(() => completedJudge({ ok: true, agentExitCode: 0 }, null)).toThrow()
   })
 })
 

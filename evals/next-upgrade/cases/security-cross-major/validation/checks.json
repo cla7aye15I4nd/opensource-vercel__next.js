@@ -1,0 +1,9 @@
+[
+  "manifest",
+  "lockfile",
+  "installed-version",
+  "typecheck",
+  "build",
+  "http",
+  "browser"
+]

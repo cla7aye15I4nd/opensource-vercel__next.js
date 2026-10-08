@@ -12,7 +12,7 @@ describe('upgrade eval selection', () => {
       })
         .trim()
         .split('\n')
-    ).toEqual(['security-same-major'])
+    ).toEqual(['security-cross-major', 'security-same-major'])
   })
 
   it('validates an upgrade fixture without starting remote work', () => {

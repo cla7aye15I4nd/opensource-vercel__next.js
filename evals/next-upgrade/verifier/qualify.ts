@@ -54,7 +54,12 @@ async function qualify(): Promise<void> {
     matched: boolean
   }[] = []
   try {
-    for (const name of ['security-same-major', 'security-cross-major']) {
+    for (const name of [
+      'security-same-major',
+      'security-cross-major',
+      'latest-same-major',
+      'latest-cross-major',
+    ]) {
       const scenario = loadCase(name)
       const controls: {
         name: string

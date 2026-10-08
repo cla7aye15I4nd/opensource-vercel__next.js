@@ -40,7 +40,7 @@ import {
   reassertRawMode,
   showUpgradeMenu,
   type UpgradeMenuResult,
-} from '../lib/upgrade/prompt-output'
+} from '../lib/upgrade/terminal'
 import {
   getReservedPortExplanation,
   isPortIsReserved,

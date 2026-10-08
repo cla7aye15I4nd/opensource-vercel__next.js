@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process'
+import { execPackageManager } from './package-manager'
 import { copyFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 
@@ -16,9 +16,9 @@ export function installNext(directory: string, version: string) {
     join(__dirname, '../../../pnpm-workspace.yaml'),
     join(directory, 'pnpm-workspace.yaml')
   )
-  execFileSync(
+  execPackageManager(
     'pnpm',
     ['install', '--ignore-scripts', '--no-optional', '--prefer-offline'],
-    { cwd: directory, stdio: 'pipe' }
+    { cwd: directory, stdio: 'pipe', encoding: 'utf8' }
   )
 }

@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'os'
 import { delimiter, join, resolve } from 'path'
 import { installNext } from './install-next'
+import { execPackageManager } from './package-manager'
 
 jest.setTimeout(30_000)
 
@@ -32,15 +33,19 @@ describe('published upgrade package', () => {
       npm_config_cache: join(directory, 'cache'),
     }
     const [packed] = JSON.parse(
-      execFileSync('npm', ['pack', packageRoot, '--json', '--ignore-scripts'], {
-        cwd: directory,
-        env,
-        encoding: 'utf8',
-      })
+      execPackageManager(
+        'npm',
+        ['pack', packageRoot, '--json', '--ignore-scripts'],
+        {
+          cwd: directory,
+          env,
+          encoding: 'utf8',
+        }
+      )
     )
     packedFiles = packed.files.map((file: { path: string }) => file.path)
     writeFileSync(join(directory, 'package.json'), '{"private":true}')
-    execFileSync(
+    execPackageManager(
       'npm',
       [
         'install',
@@ -50,7 +55,7 @@ describe('published upgrade package', () => {
         '--no-audit',
         '--no-fund',
       ],
-      { cwd: directory, env, stdio: 'pipe' }
+      { cwd: directory, env, stdio: 'pipe', encoding: 'utf8' }
     )
     bin = join(directory, 'node_modules/@next/upgrade/dist/bin/next-upgrade.js')
   })

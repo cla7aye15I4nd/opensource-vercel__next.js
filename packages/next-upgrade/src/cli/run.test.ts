@@ -1,4 +1,5 @@
-import { ChildProcess, spawn } from 'child_process'
+import { ChildProcess } from 'child_process'
+import spawn from 'cross-spawn'
 import * as Log from '../shared/log'
 import { findDir, getProjectDir } from '../next/project'
 import { prepareUpgrade } from './agent/prepare'
@@ -9,9 +10,9 @@ import { loadAgentUpgradeConfig as loadConfig } from '../next/config'
 import { getAgentName } from './agent/detect-agent'
 import { createTelemetry } from '../next/telemetry'
 
-jest.mock('child_process', () => ({
-  ...jest.requireActual('child_process'),
-  spawn: jest.fn(),
+jest.mock('cross-spawn', () => ({
+  __esModule: true,
+  default: jest.fn(),
 }))
 jest.mock('./spinner', () => ({
   __esModule: true,

@@ -141,7 +141,10 @@ describe('published upgrade package', () => {
       },
       encoding: 'utf8',
     })
-    expect(child.status).toBe(19)
+    expect(child.error).toBeUndefined()
+    expect({ status: child.status, stderr: child.stderr }).toMatchObject({
+      status: 19,
+    })
     expect(JSON.parse(readFileSync(result, 'utf8'))).toEqual([
       '--yes',
       '@next/codemod@canary',

@@ -1,18 +1,15 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
-import semver from 'next/dist/compiled/semver'
+import semver from 'semver'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import loadConfig from 'next/dist/server/config'
+import { loadFutureConfig as loadConfig } from '../../next/config'
 import {
   getLatestUpgradeVersion,
   getUpgradeAssessment,
-} from 'next/dist/lib/upgrade/prepare-upgrade'
-import { prepareUpgrade } from 'next/dist/lib/upgrade/prepare-upgrade'
+} from '../../shared/check-upgrade'
+import { prepareUpgrade } from './prepare'
 
-jest.mock('next/dist/server/config', () => ({
-  __esModule: true,
-  default: jest.fn(),
-}))
+jest.mock('../../next/config', () => ({ loadFutureConfig: jest.fn() }))
 
 describe('prepare latest upgrade', () => {
   const directories: string[] = []
@@ -139,7 +136,7 @@ describe('prepare latest upgrade', () => {
       upgrade: {
         status: 'blocked',
         reason:
-          "The installed Next.js version (17.2.0-canary.4) is a canary prerelease. Security advisories target stable versions, and prereleases do not reliably follow stable version ordering, so an advisory could be a false positive. To upgrade to the latest canary release, run this command from the app's directory:\n\nnpx next@canary upgrade --agent=latest",
+          "The installed Next.js version (17.2.0-canary.4) is a canary prerelease. Security advisories target stable versions, and prereleases do not reliably follow stable version ordering, so an advisory could be a false positive. To upgrade to the latest canary release, run this command from the app's directory:\n\nnpx @next/upgrade@canary --agent=latest",
       },
     })
     await expect(prepareUpgrade(directory, 'security')).resolves.toMatchObject({
@@ -369,7 +366,7 @@ describe('prepare latest upgrade', () => {
           upgrade: expect.objectContaining({
             status: 'blocked',
             reason: expect.stringContaining(
-              'npx next@canary upgrade --agent=latest'
+              'npx @next/upgrade@canary --agent=latest'
             ),
           }),
         })
@@ -399,7 +396,7 @@ describe('prepare latest upgrade', () => {
           upgrade: expect.objectContaining({
             status: 'blocked',
             reason: expect.stringContaining(
-              'npx next@canary upgrade --agent=latest'
+              'npx @next/upgrade@canary --agent=latest'
             ),
           }),
         })

@@ -10,10 +10,11 @@ const enabled =
 export const {
   bold,
   cyan,
+  dim,
   red,
   white,
   yellow,
 }: Record<
-  'bold' | 'cyan' | 'red' | 'white' | 'yellow',
+  'bold' | 'cyan' | 'dim' | 'red' | 'white' | 'yellow',
   (value: string) => string
 > = createColors(Boolean(enabled))

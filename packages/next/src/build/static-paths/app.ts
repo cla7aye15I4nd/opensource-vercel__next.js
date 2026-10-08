@@ -959,7 +959,9 @@ export async function buildAppStaticPaths({
   const afterRunner = new AfterRunner()
 
   const store = createWorkStore({
-    page,
+    // Manifest lookups need the app entry path, including route groups and
+    // /page or /route, rather than the normalized pathname used below.
+    page: ComponentMod.routeModule.definition.page,
     renderOpts: {
       incrementalCache,
       cacheLifeProfiles,
